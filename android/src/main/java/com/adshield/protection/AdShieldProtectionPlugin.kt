@@ -1,6 +1,6 @@
 package com.adshield.protection
 
-import android.app.Activity
+import androidx.activity.result.ActivityResult
 import android.content.Intent
 import android.net.VpnService
 import com.getcapacitor.ActivityCallback
