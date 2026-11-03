@@ -1,9 +1,9 @@
 package com.adshield.protection
 
+import android.app.Activity
 import androidx.activity.result.ActivityResult
-import android.content.Intent
 import android.net.VpnService
-import com.getcapacitor.ActivityCallback
+import com.getcapacitor.annotation.ActivityCallback
 import com.getcapacitor.JSObject
 import com.getcapacitor.Plugin
 import com.getcapacitor.PluginCall
@@ -26,7 +26,7 @@ class AdShieldProtectionPlugin : Plugin() {
 
     @PluginMethod
     fun requestPermission(call: PluginCall) {
-        val permissionIntent = VpnService.prepare(context)
+        val permissionIntent = VpnService.prepare(getContext())
         if (permissionIntent == null) {
             val result = JSObject()
             result.put("granted", true)
