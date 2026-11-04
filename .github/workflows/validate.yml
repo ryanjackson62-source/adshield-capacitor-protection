@@ -55,3 +55,46 @@ jobs:
       - name: Run DNS parser tests
         working-directory: .ci-kotlin
         run: gradle test --no-daemon
+  android-plugin:
+    name: Android Capacitor plugin compile
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@v3
+      - name: Install Android SDK platform
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+      - name: Install Capacitor Android dependency
+        run: npm install --no-save --no-package-lock @capacitor/android@8.0.0
+      - name: Create temporary Android host build
+        run: |
+          cat > settings.gradle <<'EOF'
+          pluginManagement {
+              repositories { google(); mavenCentral(); gradlePluginPortal() }
+          }
+          dependencyResolutionManagement {
+              repositories { google(); mavenCentral() }
+          }
+          rootProject.name = "adshield-android-validation"
+          include ":capacitor-android", ":adshield"
+          project(":capacitor-android").projectDir = file("node_modules/@capacitor/android/capacitor")
+          project(":adshield").projectDir = file("android")
+          EOF
+          cat > build.gradle <<'EOF'
+          buildscript {
+              repositories { google(); mavenCentral(); gradlePluginPortal() }
+              dependencies {
+                  classpath "com.android.tools.build:gradle:8.13.0"
+                  classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:2.0.21"
+              }
+          }
+          ext { compileSdkVersion = 36; minSdkVersion = 24; targetSdkVersion = 36 }
+          EOF
+      - name: Compile AdShield Android plugin against Capacitor 8
+        run: gradle :adshield:assembleDebug --no-daemon
