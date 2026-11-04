@@ -75,7 +75,7 @@ class DnsQuestionParserTest {
 
     @Test
     fun rejectsResponsePackets() {
-        val packet = query(byteArrayOf(0x01, 0x61, 0))
+        val packet = query(byteArrayOf(0x01, 0x61, 0), flags = 0x8100)
         assertThrows(IllegalArgumentException::class.java) {
             DnsQuestionParser.parse(packet)
         }
