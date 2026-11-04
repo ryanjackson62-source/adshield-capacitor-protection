@@ -1,0 +1,57 @@
+name: Validate AdShield plugin scaffold
+
+on:
+  push:
+    branches: [main, native-vpn-engine]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  typescript:
+    name: TypeScript package build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund
+      - run: npm run build
+
+  dns-parser:
+    name: DNS parser unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Create isolated Kotlin test project
+        run: |
+          mkdir -p .ci-kotlin/src/main/kotlin/com/adshield/protection
+          mkdir -p .ci-kotlin/src/test/kotlin/com/adshield/protection
+          cp android/src/main/java/com/adshield/protection/DnsQuestionParser.kt .ci-kotlin/src/main/kotlin/com/adshield/protection/
+          cp android/src/test/java/com/adshield/protection/DnsQuestionParserTest.kt .ci-kotlin/src/test/kotlin/com/adshield/protection/
+          cat > .ci-kotlin/settings.gradle.kts <<'EOF'
+          rootProject.name = "adshield-dns-parser-tests"
+          EOF
+          cat > .ci-kotlin/build.gradle.kts <<'EOF'
+          plugins {
+              kotlin("jvm") version "2.0.21"
+          }
+          repositories {
+              mavenCentral()
+          }
+          dependencies {
+              testImplementation("junit:junit:4.13.2")
+          }
+          tasks.test {
+              useJUnit()
+          }
+          EOF
+      - name: Run DNS parser tests
+        working-directory: .ci-kotlin
+        run: gradle test --no-daemon
