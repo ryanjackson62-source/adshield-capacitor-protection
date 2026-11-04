@@ -47,6 +47,14 @@ class DnsQuestionParserTest {
     }
 
     @Test
+    fun rejectsCompressionPointerIntoLabelPayload() {
+        // A pointer into label data must not be reinterpreted as a name.
+        val packet = query(byteArrayOf(0x03, 0x01, 0x78, 0x00, 0xc0.toByte(), 0x0d))
+        assertThrows(IllegalArgumentException::class.java) {
+            DnsQuestionParser.parse(packet)
+        }
+    }
+    @Test
     fun rejectsForwardCompressionPointer() {
         val packet = query(byteArrayOf(0xc0.toByte(), 0x20))
         assertThrows(IllegalArgumentException::class.java) {
