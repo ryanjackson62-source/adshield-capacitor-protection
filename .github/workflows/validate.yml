@@ -101,8 +101,8 @@ jobs:
               }
           }
           ext { compileSdkVersion = 36; minSdkVersion = 24; targetSdkVersion = 36 }
-          // Capacitor 8 depends on AndroidX libraries.
-          file("gradle.properties").text = "android.useAndroidX=true\n"
+          // Gradle reads this file before evaluating build.gradle.
+          echo "android.useAndroidX=true" > gradle.properties
           EOF
       - uses: gradle/actions/setup-gradle@v4
         with:
