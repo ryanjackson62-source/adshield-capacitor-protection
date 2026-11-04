@@ -13,7 +13,6 @@ internal object DnsQuestionParser {
     private const val HEADER_LENGTH = 12
     private const val MAX_DNS_MESSAGE = 4096
     private const val MAX_NAME_WIRE_LENGTH = 255
-    private const val MAX_POINTER_HOPS = 16
 
     data class Question(
         val transactionId: Int,
@@ -52,11 +51,9 @@ internal object DnsQuestionParser {
         require(startOffset in HEADER_LENGTH until message.size) { "DNS name starts outside message" }
 
         val labels = ArrayList<String>()
-        val visitedPointers = HashSet<Int>()
         var cursor = startOffset
         var nextOffset = -1
         var wireLength = 1
-        var pointerHops = 0
 
         while (true) {
             require(cursor < message.size) { "Truncated DNS name" }
@@ -86,15 +83,10 @@ internal object DnsQuestionParser {
                 }
 
                 0xc0 -> {
-                    require(cursor < message.size - 1) { "Truncated DNS compression pointer" }
-                    val pointer = ((length and 0x3f) shl 8) or (message[cursor + 1].toInt() and 0xff)
-                    require(pointer < cursor) { "DNS compression pointer must point backward" }
-                    require(pointer >= HEADER_LENGTH) { "DNS compression pointer targets DNS header" }
-                    require(visitedPointers.add(pointer)) { "DNS compression pointer loop detected" }
-                    pointerHops++
-                    require(pointerHops <= MAX_POINTER_HOPS) { "Too many DNS compression pointers" }
-                    if (nextOffset == -1) nextOffset = cursor + 2
-                    cursor = pointer
+                    // QNAME is the first domain name in a DNS message. It has no
+                    // earlier domain name to reference; a pointer into this same
+                    // QNAME would create a cycle. Reject compression here.
+                    throw IllegalArgumentException("Compression pointer is not valid in the first DNS question name")
                 }
 
                 else -> throw IllegalArgumentException("Reserved DNS label encoding")
