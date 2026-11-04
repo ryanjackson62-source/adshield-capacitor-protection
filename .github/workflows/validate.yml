@@ -102,5 +102,8 @@ jobs:
           }
           ext { compileSdkVersion = 36; minSdkVersion = 24; targetSdkVersion = 36 }
           EOF
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 8.13
       - name: Compile AdShield Android plugin against Capacitor 8
         run: gradle :adshield:assembleDebug --no-daemon
